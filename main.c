@@ -9,15 +9,12 @@ pthread_mutex_t mutex;              // Initialize Mutex Lock
 pthread_cond_t cond_var[NUM_PHILS]; // Initialize Condition Variable for each Philosopher
 int state[NUM_PHILS];               // Initialize States (1-Thinking,2-Hungry,3-Eating) for each Philosopher
 
-void rand_sleep() { // Sleep for 1-3 seconds
-    sleep(rand()%3 + 1);
-    return;
+int rand_sleep() { // Sleep for 1-3 seconds
+    int time = rand()%3 + 1;
+    sleep(time);
+    return time;
 }
 
-void test_eat(int philosopher_number) {
-    return;
-
-}
 void pickup_forks (int philosopher_number) { // Function to invoke eating
     int left_phil = (philosopher_number + NUM_PHILS - 1) % NUM_PHILS;
     int right_phil = (philosopher_number + 1) % NUM_PHILS;
@@ -46,21 +43,47 @@ void return_forks (int philosopher_number) { // Function to finish eating
     pthread_mutex_unlock(&mutex);   // End Race Condition Protection
 }
 
-void *philosopher_thread(void *id) {    // pthread loop
+void *philosopher_thread_func(void *id) {    // pthread loop
     int phil_id = *(int*)id;
 
-    // NOT FINISHED
     while(1) {
-        printf("bruh");
+        // Think
+        int time = rand_sleep();
+        printf("Philosopher #%d took %x000ms thinking\n", phil_id, time);
+        
+        // Hungry/Eat
+        time = rand_sleep();
+        pickup_forks(phil_id);
+        printf("Philosopher #%d took %x000ms eating\n", phil_id, time);
+
+        // Finish
+        time = rand_sleep();
+        return_forks(phil_id);
     }
 }
 
 int main() {
     pthread_t phil_thread[NUM_PHILS];   // Initialize Philosopher respective Threads
-    int phil_id[NUM_PHILS];             // Philosopher List
-    srand(time(0));
+    int phil_id[NUM_PHILS];             // Initialize Philosopher List
+    srand(time(0));                     // Randomize rand()
+    pthread_mutex_init(&mutex, NULL);   // Initialize Mutex Lock
+    
+    // Create each Philosopher Thread
+    for (int i=0; i<NUM_PHILS; i++) {
+        pthread_cond_init(&cond_var[i], NULL);  // Initalize Each Condition Variable
+        phil_id[i] = i;  // Set Philosopher IDs
+        state[i] = 1;   // Set all Philosophers to Think
+        pthread_create(&phil_thread[i], NULL, philosopher_thread_func, &phil_id[i]); // Standard pthread
+    }
 
-
-
+    // Block Main Thread with Philosopher Threads
+    for (int i=0; i<NUM_PHILS; i++) 
+        pthread_join(phil_thread[i], NULL);
+    
+    // Potential Clean Up
+    pthread_mutex_destroy(&mutex);
+    for (int i=0; i<NUM_PHILS; i++) 
+        pthread_cond_destroy(&cond_var[i]);
+    
     return 0;
 }
