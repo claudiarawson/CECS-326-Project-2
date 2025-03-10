@@ -26,7 +26,7 @@ Commands provided by the Makefile:
     Use the "run" command in the terminal by typing: make run
         This should begin the Dining Philosopher Loop.
 
-## Command: make clean
+**Command: make clean**
 
     For more tests, you can remove the output files using "make clean"
         This should clean up your directory from previous test outputs.
