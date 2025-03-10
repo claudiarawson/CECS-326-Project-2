@@ -4,7 +4,12 @@
 #include <unistd.h>
 #include <time.h>
 
-#define NUM_PHILS 5                 // # of philosophers
+// Definitions
+#define NUM_PHILS 5                 
+#define THINKING 1
+#define HUNGRY 2
+#define EATING 3
+
 pthread_mutex_t mutex;              // Initialize Mutex Lock
 pthread_cond_t cond_var[NUM_PHILS]; // Initialize Condition Variable for each Philosopher
 int state[NUM_PHILS];               // Initialize States (1-Thinking,2-Hungry,3-Eating) for each Philosopher
@@ -20,12 +25,12 @@ void pickup_forks (int philosopher_number) { // Function to invoke eating
     int right_phil = (philosopher_number + 1) % NUM_PHILS;
     
     pthread_mutex_lock(&mutex);     // Protect Against Race Conditions
-    state[philosopher_number] = 2;  // Set Philosopher to Hungry
+    state[philosopher_number] = HUNGRY;  // Set Philosopher to Hungry
 
-    while(state[left_phil] == 3 || state[right_phil] == 3)    // Wait for neighbors to finishh eating
+    while(state[left_phil] == EATING || state[right_phil] == EATING)    // Wait for neighbors to finishh eating
         pthread_cond_wait(&cond_var[philosopher_number], &mutex);
     
-    state[philosopher_number] = 3;  // After neighbors finish, philosopher can Eat
+    state[philosopher_number] = EATING;  // After neighbors finish, philosopher can Eat
     pthread_mutex_unlock(&mutex);   // End Race Condition Protection
 }
 
@@ -34,7 +39,7 @@ void return_forks (int philosopher_number) { // Function to finish eating
     int right_phil = (philosopher_number + 1) % NUM_PHILS;
 
     pthread_mutex_lock(&mutex);     // Protect Against Race Conditions
-    state[philosopher_number] = 1;  // End Eating and Start Thinking (Idle)
+    state[philosopher_number] = THINKING;  // End Eating and Start Thinking (Idle)
 
     // Signal neighbors if Hungry/Waiting for Forks (end pthread_cond_wait on cond_var)
     pthread_cond_signal(&cond_var[left_phil]);  // Signals left_phil cond_var
@@ -52,8 +57,9 @@ void *philosopher_thread_func(void *id) {    // pthread loop
         printf("Philosopher #%d took %x000ms thinking\n", phil_id, time);
         
         // Hungry/Eat
-        time = rand_sleep();
         pickup_forks(phil_id);
+        printf("Forks are with Philosopher #%d\n", phil_id);
+        time = rand_sleep();
         printf("Philosopher #%d took %x000ms eating\n", phil_id, time);
 
         // Finish
